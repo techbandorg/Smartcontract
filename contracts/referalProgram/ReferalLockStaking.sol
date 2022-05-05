@@ -1,4 +1,4 @@
-pragma solidity =0.8.0;
+pragma solidity 0.8.12;
 
 interface IBEP20 {
     function totalSupply() external view returns (uint256);
@@ -200,7 +200,7 @@ contract ReferralLockStaking is ILockStakingRewards, ReentrancyGuard, Ownable {
         require(_lockDuration > 0, "_lockDuration is equal to zero");
         token = IBEP20(_token);
         stakingToken = IBEP20(_token);
-        referralProgramUsers = INimbusReferralProgramUsers(_referralProgramUsers);
+        referralProgramUsers = IReferralProgramUsers(_referralProgramUsers);
         rewardRate = _rewardRate;
         referralRewardRate = _referralRewardRate;
         stakingCashbackRate = _stakingCashbackRate;
