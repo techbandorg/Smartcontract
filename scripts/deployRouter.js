@@ -8,7 +8,7 @@ const factoryConfig = {
 async function main() {
   const Factory = await ethers.getContractFactory("contracts/swaps/Factory.sol:Factory");
   const WBNB = await ethers.getContractFactory("contracts/swaps/WBNB.sol:WBNB");
-  const SwapRouter = await ethers.getContractFactory("contracts/swaps/SwapRouter.sol:SwapRouter");
+  const SwapRouter = await ethers.getContractFactory("contracts/swaps/SwapRouter.sol:Router");
 
   console.log("deploy factory contract")
   const factory = await Factory.deploy(factoryConfig.feeToSetter);
@@ -27,7 +27,7 @@ async function main() {
   console.log("Router:", router.address);
 
   await verifyContract(factory.address, [factoryConfig.feeToSetter]);
-  await verifyContract(wbnb.address, []);
+  // await verifyContract(wbnb.address, []);
   await verifyContract(router.address, [factory.address, wbnb.address]);
 }
 

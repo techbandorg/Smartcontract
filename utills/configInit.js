@@ -1,4 +1,3 @@
-
 const { BigNumber, ethers } = require("ethers");
 
 const startingEtherPerAccount = ethers.utils.parseUnits(BigNumber.from(1_000_000_000).toString(), "ether");
@@ -14,9 +13,9 @@ const getPKs = () => {
   return accounts;
 };
 
-const buildHardhatNetworkAccounts = (accounts) => {
-  
-  const hardhatAccounts = accounts.map(pk => {
+const buildHardhatNetworkAccounts = async () => {
+  const acc = await ethers.getSigners()
+  const hardhatAccounts = acc.map(pk => {
     // hardhat network wants 0x prefix in front of PK
     const accountConfig = {
       privateKey: pk,

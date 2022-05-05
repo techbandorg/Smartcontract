@@ -7,26 +7,20 @@ const {getPKs, buildHardhatNetworkAccounts} = require("./utills/configInit");
 
 
 const accounts = getPKs();
-const hardhatNetworkAccounts = buildHardhatNetworkAccounts(accounts);
+const hardhatNetworkAccounts = buildHardhatNetworkAccounts();
 
 module.exports = {
   defaultNetwork: "hardhat",
   networks: {
-    hardhat: {
-      forking: {
-        url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-        enabled: true,
-        blockNumber: 8603918, 
-        accounts: hardhatNetworkAccounts
-    },
+  hardhat: {
+    accounts: hardhatNetworkAccounts
   },
   binance: {
     url: "https://bsc-dataseed.binance.org/",
     chaiId: 56,
     accounts,
-    gasLimit: 2000000
-    
-},
+    gasLimit: 2000000    
+  },
   binanceTestnet: {
     url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
     chaiId: 97,
