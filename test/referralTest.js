@@ -22,6 +22,8 @@ describe("ReferalProgram", () => {
     const factory = await Factory.deploy(accounts[0].address);
     const WBNB = await ethers.getContractFactory("WBNB");
     const wbnb = await WBNB.deploy();
+    const Staking = await ethers.getContractFactory("LockStakingFixedAPY");
+    const staking = await Staking.deploy(techBandToken.address, 100, 3600 )
     const ReferralPreogramUsers = await ethers.getContractFactory("ReferralProgramUsers");
     const referralProgramUsers = await ReferralPreogramUsers.deploy(accounts[0].address);
     const RefferalProgramLogic = await ethers.getContractFactory("ReferralProgramLogic");
@@ -31,9 +33,12 @@ describe("ReferalProgram", () => {
     const Router = await ethers.getContractFactory("Router");
     const router = await Router.deploy(factory.address, wbnb.address);
     
-    await techBandToken.transfer(refferalLogic.address, ethers.utils.parseEther("100000"))
+    await techBandToken.transfer(refferalLogic.address, ethers.utils.parseEther("1000000"))
+    await techBandToken.transfer(staking.address, ethers.utils.parseEther("100000"))
     let balanceTBTinRef = await techBandToken.balanceOf(refferalLogic.address);
     console.log(balanceTBTinRef/10**18)
+    let balanceTBTinStaking = await techBandToken.balanceOf(staking.address);
+    console.log(balanceTBTinStaking.toString())
    
 
     // const bytecode = `${pairBytecode.bytecode}`
@@ -46,12 +51,20 @@ describe("ReferalProgram", () => {
     // console.log(b)
     // console.log(create2Address)
 
-    for(let i = 1; i <= 15; i++) {
+    for(let i = 1; i <= 19; i++) {
+      await techBandToken.transfer(accounts[i].address,ethers.utils.parseEther("10000") )
       await accounts[i].sendTransaction({
         to: accounts[0].address,
         value: ethers.utils.parseEther("9000")
       });
     }
+
+    // for(let i = 1; i <= 19; i++) {
+    //   await accounts[i].sendTransaction({
+    //     to: accounts[0].address,
+    //     value: ethers.utils.parseEther("9000")
+    //   });
+    // }
 
     await busd.approve(router.address, MAX_UINT)
     await techBandToken.approve(router.address, MAX_UINT)
@@ -68,13 +81,66 @@ describe("ReferalProgram", () => {
     );
 
     await refferalLogic.updateSwapRouter(router.address);
-    await refferalLogic.u
-    const userFirstID = await referralProgramUsers.registerUser(accounts[1].address, 0);
-    
-    await referralProgramUsers.connect(accounts[2]).register();
-    const user2 = await referralProgramUsers.userIdByAddress(accounts[2].address)
-    await referralProgramUsers.connect(accounts[3]).registerBySponsorId(user2);
+    await refferalLogic.updateStakingPoolAdd(staking.address);
+    await refferalLogic.updateSwapToken(wbnb.address);
 
+    // await refferalLogic.u
+    // const userFirstID = await referralProgramUsers.registerUser(accounts[1].address, 0);
+    await referralProgramUsers.connect(accounts[1]).register();
+    //first line
+    await referralProgramUsers.connect(accounts[2]).registerBySponsorAddress(accounts[1].address);
+    await referralProgramUsers.connect(accounts[3]).registerBySponsorAddress(accounts[1].address);
+    //second line 
+    await referralProgramUsers.connect(accounts[4]).registerBySponsorAddress(accounts[2].address);
+    await referralProgramUsers.connect(accounts[5]).registerBySponsorAddress(accounts[2].address);
+    await referralProgramUsers.connect(accounts[6]).registerBySponsorAddress(accounts[3].address);
+    await referralProgramUsers.connect(accounts[7]).registerBySponsorAddress(accounts[3].address);
+    // third line
+    await referralProgramUsers.connect(accounts[8]).registerBySponsorAddress(accounts[4].address);
+    await referralProgramUsers.connect(accounts[9]).registerBySponsorAddress(accounts[5].address);
+    await referralProgramUsers.connect(accounts[10]).registerBySponsorAddress(accounts[6].address);
+    await referralProgramUsers.connect(accounts[11]).registerBySponsorAddress(accounts[7].address);
+    //fourth line
+    await referralProgramUsers.connect(accounts[12]).registerBySponsorAddress(accounts[8].address);
+    await referralProgramUsers.connect(accounts[13]).registerBySponsorAddress(accounts[9].address);
+    await referralProgramUsers.connect(accounts[14]).registerBySponsorAddress(accounts[10].address);
+    await referralProgramUsers.connect(accounts[15]).registerBySponsorAddress(accounts[11].address);
+    // fifth line
+    await referralProgramUsers.connect(accounts[16]).registerBySponsorAddress(accounts[12].address);
+    await referralProgramUsers.connect(accounts[17]).registerBySponsorAddress(accounts[13].address);
+    
+    // sixth line 
+    await referralProgramUsers.connect(accounts[18]).registerBySponsorAddress(accounts[16].address);
+    await referralProgramUsers.connect(accounts[19]).registerBySponsorAddress(accounts[17].address);
+
+
+    for(let i = 1; i <= 19; i++) {
+      await techBandToken.connect(accounts[i]).approve(staking.address, MAX_UINT)
+      await staking.connect(accounts[i]).stake(ethers.utils.parseEther("200"))
+    }
+
+    const user1 = await referralProgramUsers.userIdByAddress(accounts[1].address)
+    const user2 = await referralProgramUsers.userIdByAddress(accounts[2].address)
+    const user9 = await referralProgramUsers.userIdByAddress(accounts[9].address)
+    const user10 = await referralProgramUsers.userIdByAddress(accounts[10].address)
+    // await referralProgramUsers.connect(accounts[3]).registerBySponsorId(user2);
+    const sponsor = await referralProgramUsers.userSponsor(user1);
+    const refs = await referralProgramUsers.getUserReferralss(accounts[1].address)
+    console.log(refs.toString() ,' refs')
+    console.log(sponsor.toString())
+    await refferalLogic.connect(accounts[10]).recordFee(techBandToken.address, accounts[10].address, ethers.utils.parseEther("100000")) 
+
+    
+    // for(let i = 2; i <= 19; i++) {
+      // let balance
+      await refferalLogic.distributeEarnedFeess(techBandToken.address, user10) 
+      // 
+    // }
+   
+    // for(let i = 1; i <= 19; i++) {
+    await ethers.provider.send('evm_increaseTime', [3600]);
+    let und = await refferalLogic.undistributedFees(techBandToken.address, user9)
+    console.log(und.toString(), 'addddadadadadada')
     return {techBandToken, busd, accounts };
   };
 
@@ -84,7 +150,7 @@ describe("ReferalProgram", () => {
     let bal1 = await accounts[0].getBalance();
     let tbtBal = await techBandToken.balanceOf(accounts[0].address)
     let busdBal = await busd.balanceOf(accounts[0].address)
-    console.log(bal1.toString()/10**18)
+    console.log(bal1.toString())
     console.log(tbtBal.toString()/10**18)
     console.log(busdBal.toString()/10**18)
   });

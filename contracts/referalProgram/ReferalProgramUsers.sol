@@ -128,7 +128,7 @@ contract ReferralProgramUsers is IReferralProgram, Ownable {
         return _userReferrals[userId];
     }
 
-    function getUserReferrals(address user) external view returns (uint[] memory) {
+    function getUserReferralss(address user) external view returns (uint[] memory) {
         return _userReferrals[userIdByAddress[user]];
     }
 

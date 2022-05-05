@@ -122,7 +122,7 @@ contract ReferralProgramLogic is Ownable {
         _recordedBalances[token] = actualBalance;
     }
 
-    function distributeEarnedFees(address token, uint userId) external {
+    function distributeEarnedFeess(address token, uint userId) external {
         distributeFees(token, userId);
         uint callerId = users.userIdByAddress(msg.sender);
         if (_undistributedFees[token][callerId] > 0) distributeFees(token, callerId);
