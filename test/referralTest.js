@@ -109,10 +109,12 @@ describe("ReferalProgramUsers and RefferalLockStaking Contracts", () => {
     let tbtBalance8 = await techBandToken.balanceOf(accounts[8].address)
     let tbtBalance9 = await techBandToken.balanceOf(accounts[9].address)
     let tbtBalance10 = await techBandToken.balanceOf(accounts[10].address)
+
     for(let i = 1; i <= 10; i++) {
       await techBandToken.connect(accounts[i]).approve(referralStaking.address, MAX_UINT)
       await referralStaking.connect(accounts[i]).stake(stakeAmount)
     }
+    
     let tbtBalance1After = await techBandToken.balanceOf(accounts[1].address)
     let tbtBalance2After = await techBandToken.balanceOf(accounts[2].address)
     let tbtBalance3After = await techBandToken.balanceOf(accounts[3].address)
