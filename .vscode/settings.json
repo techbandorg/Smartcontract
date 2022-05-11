@@ -1,6 +1,0 @@
-{
-  "solidity.persistErrors": false,
-  "solidity.lintOnOpen": "solc-only",
-  "solidity.lintOnChange": "solc-only",
-  "solidity.lintOnSave": "solc-only"
-}
