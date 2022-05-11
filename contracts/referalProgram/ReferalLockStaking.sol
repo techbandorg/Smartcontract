@@ -368,7 +368,7 @@ contract ReferralLockStaking is ILockStakingRewards, ReentrancyGuard, Ownable {
     
     function updateReferralProgramUsers(address _referralProgramUsers) external onlyOwner {
         require(_referralProgramUsers != address(0), "ReferralLockStaking: Referral program users address can't be equal to address(0)");
-        referralProgramUsers = INimbusReferralProgramUsers(_referralProgramUsers);
+        referralProgramUsers = IReferralProgramUsers(_referralProgramUsers);
     }
 
     function _stake(uint256 amount, address user) private {

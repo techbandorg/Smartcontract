@@ -4,54 +4,35 @@ const {
   delay,
   nowInSeconds
 } = require("../utills/timeHelpers");
-const {getCreate2Address} = require("../utills/pair")
-const pairBytecode = require("../artifacts/contracts/swaps/Factory.sol/Pair.json")
 
 const MAX_UINT = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+const sevenDays = 7 * 24 * 60 * 60;
 
-describe("ReferalProgram", () => {
+describe("ReferalProgramUsers and RefferalLockStaking Contracts", () => {
   const { provider } = ethers;
 
   const setup = async () => {
     const accounts = await ethers.getSigners();
     const TBT = await ethers.getContractFactory("TechBandToken");
     const techBandToken = await TBT.deploy("TechBand Token", "TBT","18", "100000000000000000000000000");
-    const BUSD = await ethers.getContractFactory("BUSD")
-    const busd = await BUSD.deploy("BUSD", "BUSD","18", "100000000000000000000000000")
-    const Factory = await ethers.getContractFactory("Factory");
-    const factory = await Factory.deploy(accounts[0].address);
-    const WBNB = await ethers.getContractFactory("WBNB");
-    const wbnb = await WBNB.deploy();
-    const Staking = await ethers.getContractFactory("LockStakingFixedAPY");
-    const staking = await Staking.deploy(techBandToken.address, 100, 3600 )
     const ReferralPreogramUsers = await ethers.getContractFactory("ReferralProgramUsers");
     const referralProgramUsers = await ReferralPreogramUsers.deploy(accounts[0].address);
-    const RefferalProgramLogic = await ethers.getContractFactory("ReferralProgramLogic");
-    const refferalLogic = await RefferalProgramLogic.deploy(referralProgramUsers.address, techBandToken.address)
-    
   
-    const Router = await ethers.getContractFactory("Router");
-    const router = await Router.deploy(factory.address, wbnb.address);
-    
-    await techBandToken.transfer(refferalLogic.address, ethers.utils.parseEther("1000000"))
-    await techBandToken.transfer(staking.address, ethers.utils.parseEther("100000"))
-    let balanceTBTinRef = await techBandToken.balanceOf(refferalLogic.address);
-    console.log(balanceTBTinRef/10**18)
-    let balanceTBTinStaking = await techBandToken.balanceOf(staking.address);
-    console.log(balanceTBTinStaking.toString())
-   
+    const ReferralStaking = await ethers.getContractFactory("ReferralLockStaking");
+    const referralStaking = await ReferralStaking.deploy(
+      techBandToken.address,
+      referralProgramUsers.address,
+      100,
+      120,
+      5,
+      5,
+      3600
+    )
 
-    // const bytecode = `${pairBytecode.bytecode}`
-    // const create2Address = getCreate2Address(factory.address, [techBandToken.address, busd.address], bytecode)
-    // let  b = await factory.createPair(techBandToken.address, wbnb.address);
-    // const pr = await factory.getPair(techBandToken.address, wbnb.address);
-    // const airCodeHash = await factory.pairCodeHash();
-    // console.log(airCodeHash, 'oooooo')
-    // console.log(pr, 'sddsdssdsdsd')
-    // console.log(b)
-    // console.log(create2Address)
+    await techBandToken.approve(referralStaking.address, MAX_UINT)
+    await techBandToken.transfer(referralStaking.address, ethers.utils.parseEther("1000000"))
 
-    for(let i = 1; i <= 19; i++) {
+    for(let i = 1; i <= 18; i++) {
       await techBandToken.transfer(accounts[i].address,ethers.utils.parseEther("10000") )
       await accounts[i].sendTransaction({
         to: accounts[0].address,
@@ -59,33 +40,13 @@ describe("ReferalProgram", () => {
       });
     }
 
-    // for(let i = 1; i <= 19; i++) {
-    //   await accounts[i].sendTransaction({
-    //     to: accounts[0].address,
-    //     value: ethers.utils.parseEther("9000")
-    //   });
-    // }
+    return {techBandToken, referralProgramUsers,referralStaking, accounts };
+  };
 
-    await busd.approve(router.address, MAX_UINT)
-    await techBandToken.approve(router.address, MAX_UINT)
-    await factory.createPair(techBandToken.address, wbnb.address)
-    const info = await router.addLiquidityBNB(
-      techBandToken.address,
-      ethers.utils.parseEther("400000"),
-      0,
-      0,
-      accounts[0].address,
-      (nowInSeconds() + 1000).toString(), {
-        value: ethers.utils.parseEther("400")
-      }
-    );
-
-    await refferalLogic.updateSwapRouter(router.address);
-    await refferalLogic.updateStakingPoolAdd(staking.address);
-    await refferalLogic.updateSwapToken(wbnb.address);
-
-    // await refferalLogic.u
-    // const userFirstID = await referralProgramUsers.registerUser(accounts[1].address, 0);
+  it("Tests for Referral Staking and Referral Registration", async () => {
+    const { techBandToken, accounts, referralProgramUsers, referralStaking } = await setup();
+    const stakeAmount = ethers.utils.parseEther("1000");
+    //register in referral program 
     await referralProgramUsers.connect(accounts[1]).register();
     //first line
     await referralProgramUsers.connect(accounts[2]).registerBySponsorAddress(accounts[1].address);
@@ -110,48 +71,145 @@ describe("ReferalProgram", () => {
     await referralProgramUsers.connect(accounts[17]).registerBySponsorAddress(accounts[13].address);
     
     // sixth line 
-    await referralProgramUsers.connect(accounts[18]).registerBySponsorAddress(accounts[16].address);
-    await referralProgramUsers.connect(accounts[19]).registerBySponsorAddress(accounts[17].address);
+    await referralProgramUsers.connect(accounts[18]).registerBySponsorAddress(accounts[16].address)
+
+    let userId1 = await referralProgramUsers.userIdByAddress(accounts[1].address)
+    let userId2 = await referralProgramUsers.userIdByAddress(accounts[2].address)
+    let userId3 = await referralProgramUsers.userIdByAddress(accounts[3].address)
+    let userId4 = await referralProgramUsers.userIdByAddress(accounts[4].address)
+    let userId5 = await referralProgramUsers.userIdByAddress(accounts[5].address)
+    let userId6 = await referralProgramUsers.userIdByAddress(accounts[6].address)
+    let userId7 = await referralProgramUsers.userIdByAddress(accounts[7].address)
+    let userId8 = await referralProgramUsers.userIdByAddress(accounts[8].address)
+    let userId9 = await referralProgramUsers.userIdByAddress(accounts[9].address)
+    let userId10 = await referralProgramUsers.userIdByAddress(accounts[10].address)
+
+    expect(++userId1).to.be.greaterThan(0)
+    expect(++userId2).to.be.greaterThan(0)
+    expect(++userId3).to.be.greaterThan(0)
+    expect(++userId4).to.be.greaterThan(0)
+    expect(++userId5).to.be.greaterThan(0)
+    expect(++userId6).to.be.greaterThan(0)
+    expect(++userId7).to.be.greaterThan(0)
+    expect(++userId8).to.be.greaterThan(0)
+    expect(++userId9).to.be.greaterThan(0)
+    expect(++userId10).to.be.greaterThan(0)
+
+    let userSponsor = await referralProgramUsers.userSponsorByAddress(accounts[4].address);
+    expect(userSponsor).to.be.equal(userId1)
+
+    //balance
+    let tbtBalance1 = await techBandToken.balanceOf(accounts[1].address)
+    let tbtBalance2 = await techBandToken.balanceOf(accounts[2].address)
+    let tbtBalance3 = await techBandToken.balanceOf(accounts[3].address)
+    let tbtBalance4 = await techBandToken.balanceOf(accounts[4].address)
+    let tbtBalance5 = await techBandToken.balanceOf(accounts[5].address)
+    let tbtBalance6 = await techBandToken.balanceOf(accounts[6].address)
+    let tbtBalance7 = await techBandToken.balanceOf(accounts[7].address)
+    let tbtBalance8 = await techBandToken.balanceOf(accounts[8].address)
+    let tbtBalance9 = await techBandToken.balanceOf(accounts[9].address)
+    let tbtBalance10 = await techBandToken.balanceOf(accounts[10].address)
+    for(let i = 1; i <= 10; i++) {
+      await techBandToken.connect(accounts[i]).approve(referralStaking.address, MAX_UINT)
+      await referralStaking.connect(accounts[i]).stake(stakeAmount)
+    }
+    let tbtBalance1After = await techBandToken.balanceOf(accounts[1].address)
+    let tbtBalance2After = await techBandToken.balanceOf(accounts[2].address)
+    let tbtBalance3After = await techBandToken.balanceOf(accounts[3].address)
+    let tbtBalance4After = await techBandToken.balanceOf(accounts[4].address)
+    let tbtBalance5After = await techBandToken.balanceOf(accounts[5].address)
+    let tbtBalance6After = await techBandToken.balanceOf(accounts[6].address)
+    let tbtBalance7After = await techBandToken.balanceOf(accounts[7].address)
+    let tbtBalance8After = await techBandToken.balanceOf(accounts[8].address)
+    let tbtBalance9After = await techBandToken.balanceOf(accounts[9].address)
+    let tbtBalance10After = await techBandToken.balanceOf(accounts[10].address)
+
+    expect(++tbtBalance1).to.be.greaterThan(++tbtBalance1After);
+    expect(++tbtBalance2).to.be.greaterThan(++tbtBalance2After);
+    expect(++tbtBalance3).to.be.greaterThan(++tbtBalance3After);
+    expect(++tbtBalance4).to.be.greaterThan(++tbtBalance4After);
+    expect(++tbtBalance5).to.be.greaterThan(++tbtBalance5After);
+    expect(++tbtBalance6).to.be.greaterThan(++tbtBalance6After);
+    expect(++tbtBalance7).to.be.greaterThan(++tbtBalance7After);
+    expect(++tbtBalance8).to.be.greaterThan(++tbtBalance8After);
+    expect(++tbtBalance9).to.be.greaterThan(++tbtBalance9After);
+    expect(++tbtBalance10).to.be.greaterThan(++tbtBalance10After);
+
+    expect(++tbtBalance1After).to.be.greaterThan(tbtBalance1 - stakeAmount)
+    expect(++tbtBalance2After).to.be.greaterThan(tbtBalance2 - stakeAmount)
+    expect(++tbtBalance3After).to.be.greaterThan(tbtBalance3 - stakeAmount)
+    expect(++tbtBalance4After).to.be.greaterThan(tbtBalance4 - stakeAmount)
+    expect(++tbtBalance5After).to.be.greaterThan(tbtBalance5 - stakeAmount)
+    expect(++tbtBalance6After).to.be.greaterThan(tbtBalance6 - stakeAmount)
+    expect(++tbtBalance7After).to.be.greaterThan(tbtBalance7 - stakeAmount)
+    expect(++tbtBalance8After).to.be.greaterThan(tbtBalance8 - stakeAmount)
+    expect(++tbtBalance9After).to.be.greaterThan(tbtBalance9 - stakeAmount)
+    expect(++tbtBalance10After).to.be.greaterThan(tbtBalance10 - stakeAmount)
+
+    await ethers.provider.send('evm_increaseTime', [sevenDays]);
+
+    let earnedAccount1 = await referralStaking.earned(accounts[1].address)
+    let earnedAccount2 = await referralStaking.earned(accounts[2].address)
+    let earnedAccount3 = await referralStaking.earned(accounts[3].address)
+    let earnedAccount4 = await referralStaking.earned(accounts[4].address)
+    let earnedAccount5 = await referralStaking.earned(accounts[5].address)
+    let earnedAccount6 = await referralStaking.earned(accounts[6].address)
+    let earnedAccount7 = await referralStaking.earned(accounts[7].address)
+    let earnedAccount8 = await referralStaking.earned(accounts[8].address)
+    let earnedAccount9 = await referralStaking.earned(accounts[9].address)
+    let earnedAccount10 = await referralStaking.earned(accounts[10].address)
+
+    expect(++earnedAccount1).to.be.greaterThan(0);
+    expect(++earnedAccount2).to.be.greaterThan(0);
+    expect(++earnedAccount3).to.be.greaterThan(0);
+    expect(++earnedAccount4).to.be.greaterThan(0);
+    expect(++earnedAccount5).to.be.greaterThan(0);
+    expect(++earnedAccount6).to.be.greaterThan(0);
+    expect(++earnedAccount7).to.be.greaterThan(0);
+    expect(++earnedAccount8).to.be.greaterThan(0);
+    expect(++earnedAccount9).to.be.greaterThan(0);
+    expect(++earnedAccount10).to.be.greaterThan(0);
+
+    const userStakingInfo1 = await referralStaking.userStakingInfo(accounts[1].address);
+
+    const userNonce1 = await referralStaking.stakeNonces(accounts[1].address);
+    const userNonce2 = await referralStaking.stakeNonces(accounts[2].address);
+    const userNonce3 = await referralStaking.stakeNonces(accounts[3].address);
+    const userNonce4 = await referralStaking.stakeNonces(accounts[4].address);
+    const userNonce5 = await referralStaking.stakeNonces(accounts[5].address);
+    const userNonce6 = await referralStaking.stakeNonces(accounts[6].address);
+    const userNonce7 = await referralStaking.stakeNonces(accounts[7].address);
+    const userNonce8 = await referralStaking.stakeNonces(accounts[8].address);
+    const userNonce9 = await referralStaking.stakeNonces(accounts[9].address);
+    const userNonce10 = await referralStaking.stakeNonces(accounts[10].address);
 
 
-    for(let i = 1; i <= 19; i++) {
-      await techBandToken.connect(accounts[i]).approve(staking.address, MAX_UINT)
-      await staking.connect(accounts[i]).stake(ethers.utils.parseEther("200"))
+    for(i = 1; i <= 10; i++) {
+      let userNonce = await referralStaking.stakeNonces(accounts[i].address)
+      expect(userNonce).to.be.equal("1");
+      await referralStaking.connect(accounts[i]).withdrawAndGetReward(0)
     }
 
-    const user1 = await referralProgramUsers.userIdByAddress(accounts[1].address)
-    const user2 = await referralProgramUsers.userIdByAddress(accounts[2].address)
-    const user9 = await referralProgramUsers.userIdByAddress(accounts[9].address)
-    const user10 = await referralProgramUsers.userIdByAddress(accounts[10].address)
-    // await referralProgramUsers.connect(accounts[3]).registerBySponsorId(user2);
-    const sponsor = await referralProgramUsers.userSponsor(user1);
-    const refs = await referralProgramUsers.getUserReferralss(accounts[1].address)
-    console.log(refs.toString() ,' refs')
-    console.log(sponsor.toString())
-    await refferalLogic.connect(accounts[10]).recordFee(techBandToken.address, accounts[10].address, ethers.utils.parseEther("100000")) 
+    let tbtBalance1AfterWithdraw = await techBandToken.balanceOf(accounts[1].address)
+    let tbtBalance2AfterWithdraw = await techBandToken.balanceOf(accounts[2].address)
+    let tbtBalance3AfterWithdraw = await techBandToken.balanceOf(accounts[3].address)
+    let tbtBalance4AfterWithdraw = await techBandToken.balanceOf(accounts[4].address)
+    let tbtBalance5AfterWithdraw = await techBandToken.balanceOf(accounts[5].address)
+    let tbtBalance6AfterWithdraw = await techBandToken.balanceOf(accounts[6].address)
+    let tbtBalance7AfterWithdraw = await techBandToken.balanceOf(accounts[7].address)
+    let tbtBalance8AfterWithdraw = await techBandToken.balanceOf(accounts[8].address)
+    let tbtBalance9AfterWithdraw = await techBandToken.balanceOf(accounts[9].address)
+    let tbtBalance10AfterWithdraw = await techBandToken.balanceOf(accounts[10].address)
 
-    
-    // for(let i = 2; i <= 19; i++) {
-      // let balance
-      await refferalLogic.distributeEarnedFeess(techBandToken.address, user10) 
-      // 
-    // }
-   
-    // for(let i = 1; i <= 19; i++) {
-    await ethers.provider.send('evm_increaseTime', [3600]);
-    let und = await refferalLogic.undistributedFees(techBandToken.address, user9)
-    console.log(und.toString(), 'addddadadadadada')
-    return {techBandToken, busd, accounts };
-  };
-
-  it("receives BNB correctly", async () => {
-    const { techBandToken,busd, accounts } = await setup();
-    // console.log(techBandToken)
-    let bal1 = await accounts[0].getBalance();
-    let tbtBal = await techBandToken.balanceOf(accounts[0].address)
-    let busdBal = await busd.balanceOf(accounts[0].address)
-    console.log(bal1.toString())
-    console.log(tbtBal.toString()/10**18)
-    console.log(busdBal.toString()/10**18)
+    expect(tbtBalance1AfterWithdraw -tbtBalance1).to.be.greaterThan(0);
+    expect(tbtBalance2AfterWithdraw -tbtBalance2).to.be.greaterThan(0);
+    expect(tbtBalance3AfterWithdraw -tbtBalance3).to.be.greaterThan(0);
+    expect(tbtBalance4AfterWithdraw -tbtBalance4).to.be.greaterThan(0);
+    expect(tbtBalance5AfterWithdraw -tbtBalance5).to.be.greaterThan(0);
+    expect(tbtBalance6AfterWithdraw -tbtBalance6).to.be.greaterThan(0);
+    expect(tbtBalance7AfterWithdraw -tbtBalance7).to.be.greaterThan(0);
+    expect(tbtBalance8AfterWithdraw -tbtBalance8).to.be.greaterThan(0);
+    expect(tbtBalance9AfterWithdraw -tbtBalance9).to.be.greaterThan(0);
+    expect(tbtBalance10AfterWithdraw -tbtBalance10).to.be.greaterThan(0);
   });
 });
