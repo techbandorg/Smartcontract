@@ -242,8 +242,8 @@ library RouterLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'706de0ade5389ef4e3e08421e20680152f372eba28a469efdac2c98faf6dacca'
-                // hex'db30e47fd6e77459fc13f8efdd91fc60b8c891af5954053614d1cc2ca3514ac1' // init code hash
+                hex'e2f613e1ee6d5e2299bc93342224843a0d25b86b54e1f5352970bd55855f1919'
+                // hex'0xe2f613e1ee6d5e2299bc93342224843a0d25b86b54e1f5352970bd55855f1919' // init code hash
             )))));
     }
 

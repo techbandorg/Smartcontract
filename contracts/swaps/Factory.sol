@@ -5,7 +5,6 @@ interface IFactory {
 
     function feeTo() external view returns (address);
     function feeToSetter() external view returns (address);
-    // function ReferralProgram() external view returns (address);
 
     function getPair(address tokenA, address tokenB) external view returns (address pair);
     function allPairs(uint) external view returns (address pair);
@@ -186,30 +185,12 @@ library UQ112x112 {
     }
 }
 
-// interface IBEP20 {
-//     event Approval(address indexed owner, address indexed spender, uint value);
-//     event Transfer(address indexed from, address indexed to, uint value);
-
-//     function name() external view returns (string memory);
-//     function symbol() external view returns (string memory);
-//     function decimals() external view returns (uint8);
-//     function totalSupply() external view returns (uint);
-//     function balanceOf(address owner) external view returns (uint);
-//     function allowance(address owner, address spender) external view returns (uint);
-//     function getOwner() external view returns (address);
-
-//     function approve(address spender, uint value) external returns (bool);
-//     function transfer(address to, uint value) external returns (bool);
-//     function transferFrom(address from, address to, uint value) external returns (bool);
-// }
 
 interface ICallee {
     function Call(address sender, uint amount0, uint amount1, bytes calldata data) external;
 }
 
-// interface IReferralProgram {
-//     function recordFee(address token, address recipient, uint amount) external;
-// }
+
 
 contract Pair is IPair, BEP20 {
     using UQ112x112 for uint224;
@@ -372,23 +353,6 @@ contract Pair is IPair, BEP20 {
         uint amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, 'TB: INSUFFICIENT_INPUT_AMOUNT');
 
-        // {
-        // address referralProgram = IFactory(factory).ReferralProgram();
-        // if (amount0In > 0) {
-        //     address _token0 = token0;
-        //     uint refFee = amount0In * 3/ 2000;
-        //     _safeTransfer(_token0, referralProgram, refFee);
-        //     IReferralProgram(referralProgram).recordFee(_token0, to, refFee);
-        //     balance0 -= refFee;
-        // } 
-        // if (amount1In > 0) {
-        //     uint refFee = amount1In * 3 / 2000;
-        //     address _token1 = token1;
-        //     _safeTransfer(_token1, referralProgram, refFee);
-        //     IReferralProgram(referralProgram).recordFee(_token1, to, refFee);
-        //     balance1 -= refFee;
-        // }
-        // }
         
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
         uint balance0Adjusted = balance0 * 10000 - (amount0In * 15);
@@ -463,10 +427,4 @@ contract Factory is IFactory {
         require(_feeToSetter != address(0), 'TB: ZERO_ADDRESS');
         feeToSetter = _feeToSetter;
     }
-
-    // function setReferralProgram(address _ReferralProgram) external {
-    //     require(msg.sender == feeToSetter, 'TB: FORBIDDEN');
-    //     require(_ReferralProgram != address(0), 'TB: ZERO_ADDRESS');
-    //     ReferralProgram = _ReferralProgram;
-    // }
 }
